@@ -45,8 +45,12 @@ class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
           builder: (BuildContext _, AsyncSnapshot<List<Item>> snapshot) {
             if (snapshot.connectionState == ConnectionState.done &&
                 snapshot.hasData) {
-              return DataTableWidget(
-                listItem: snapshot.data,
+              return ConstrainedBox(
+                constraints: BoxConstraints.expand(
+                    width: MediaQuery.of(context).size.width),
+                child: DataTableWidget(
+                  listItem: snapshot.data,
+                ),
               );
             }
             return const CircularProgressIndicator();
@@ -62,19 +66,17 @@ class DataTableWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-        scrollDirection: Axis.vertical,
         child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
             child: DataTable(
                 columns: headerTexts
                     .map<DataColumn>((text) => DataColumn(label: Text(text)))
                     .toList(growable: false),
                 rows: listItem
-                    .map<DataRow>((Item) => DataRow(
+                    .map<DataRow>((item) => DataRow(
                           cells: <DataCell>[
-                            DataCell(SelectableText(Item.key)),
-                            DataCell(SelectableText(Item.type)),
-                            DataCell(SelectableText(Item.value)),
+                            DataCell(SelectableText(item.key)),
+                            DataCell(SelectableText(item.type)),
+                            DataCell(SelectableText(item.value)),
                           ],
                         ))
                     .toList(growable: false))));
