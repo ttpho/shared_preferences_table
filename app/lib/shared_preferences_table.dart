@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:core';
@@ -19,9 +21,10 @@ class Item {
   const Item({this.key, this.value, this.type});
 }
 
-final headerTexts = ["key", "type", "value"];
-final TextStyle bold = TextStyle(fontWeight: FontWeight.bold);
-final String title = "Shared Preferences Table";
+final _headerTexts = ["key", "type", "value"];
+final TextStyle _bold = TextStyle(fontWeight: FontWeight.bold);
+final String _title = "Shared Preferences Table";
+final String _empty = "Empty";
 
 class SharedPreferencesTable extends StatefulWidget {
   SharedPreferencesTable({Key key}) : super(key: key);
@@ -45,28 +48,47 @@ class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
     }).toList(growable: false);
   }
 
+  Future<bool> _clearAllPreferences() async {
+    final SharedPreferences prefs = await _prefs;
+    return prefs.clear();
+  }
+
+  _clearAll() {
+    _clearAllPreferences().then((_isCleared) => {setState(() {})});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: CloseButton(),
-        title: Text(title),
+        title: Text(_title),
         centerTitle: false,
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.delete_forever),
+            tooltip: 'clear all',
+            onPressed: () => _clearAll(),
+          ),
+        ],
       ),
       body: FutureBuilder<List<Item>>(
           future: _futureReadAllPreference(),
           builder: (BuildContext _, AsyncSnapshot<List<Item>> snapshot) {
             if (snapshot.connectionState == ConnectionState.done &&
                 snapshot.hasData) {
-              return ConstrainedBox(
-                constraints: BoxConstraints.expand(
-                    width: MediaQuery.of(context).size.width),
-                child: DataTableWidget(
-                  listItem: snapshot.data,
-                ),
-              );
+              final listItem = snapshot.data;
+
+              return listItem.isEmpty
+                  ? Center(child: Text(_empty))
+                  : DataTableWidget(
+                      listItem: listItem,
+                    );
             }
-            return const CircularProgressIndicator();
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
+            return Center(child: const CircularProgressIndicator());
           }),
     );
   }
@@ -79,11 +101,13 @@ class DataTableWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+        scrollDirection: Axis.vertical,
         child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: DataTable(
-                columns: headerTexts
+                columns: _headerTexts
                     .map<DataColumn>(
-                        (text) => DataColumn(label: Text(text, style: bold)))
+                        (text) => DataColumn(label: Text(text, style: _bold)))
                     .toList(growable: false),
                 rows: listItem
                     .mapIndexed<DataRow>((item, index) => DataRow(

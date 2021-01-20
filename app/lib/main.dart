@@ -23,10 +23,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Shared Preferences Table'),
     );
   }
 }
@@ -55,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         },
         tooltip: 'view',
-        child: Text("Developer View"),
+        child: Text("VIEW"),
       ),
     );
   }
