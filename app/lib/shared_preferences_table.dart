@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:core';
 
-class SharedPreferencesTable extends StatefulWidget {
-  SharedPreferencesTable({Key key}) : super(key: key);
-
-  @override
-  _SharedPreferencesTableState createState() => _SharedPreferencesTableState();
+extension IndexedIterable<E> on Iterable<E> {
+  Iterable<T> mapIndexed<T>(T Function(E e, int i) f) {
+    var i = 0;
+    return map((e) => f(e, i++));
+  }
 }
 
 class Item {
@@ -16,6 +17,15 @@ class Item {
 }
 
 final headerTexts = ["key", "type", "value"];
+final TextStyle bold = TextStyle(fontWeight: FontWeight.bold);
+final String title = "Shared Preferences Table";
+
+class SharedPreferencesTable extends StatefulWidget {
+  SharedPreferencesTable({Key key}) : super(key: key);
+
+  @override
+  _SharedPreferencesTableState createState() => _SharedPreferencesTableState();
+}
 
 class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -37,8 +47,8 @@ class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
     return Scaffold(
       appBar: AppBar(
         leading: CloseButton(),
-        title: Text("Shared Preferences Table"),
-        centerTitle: true,
+        title: Text(title),
+        centerTitle: false,
       ),
       body: FutureBuilder<List<Item>>(
           future: _futureReadAllPreference(),
@@ -69,7 +79,8 @@ class DataTableWidget extends StatelessWidget {
         child: SingleChildScrollView(
             child: DataTable(
                 columns: headerTexts
-                    .map<DataColumn>((text) => DataColumn(label: Text(text)))
+                    .map<DataColumn>(
+                        (text) => DataColumn(label: Text(text, style: bold)))
                     .toList(growable: false),
                 rows: listItem
                     .map<DataRow>((item) => DataRow(
