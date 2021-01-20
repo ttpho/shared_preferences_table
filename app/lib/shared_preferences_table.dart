@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:core';
 
+// map menthod with index is 2nd param
+// Source: https://stackoverflow.com/a/60502389
+// By: https://stackoverflow.com/users/1321917/andrey-gordeev
 extension IndexedIterable<E> on Iterable<E> {
   Iterable<T> mapIndexed<T>(T Function(E e, int i) f) {
     var i = 0;
@@ -83,7 +86,21 @@ class DataTableWidget extends StatelessWidget {
                         (text) => DataColumn(label: Text(text, style: bold)))
                     .toList(growable: false),
                 rows: listItem
-                    .map<DataRow>((item) => DataRow(
+                    .mapIndexed<DataRow>((item, index) => DataRow(
+                          color: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                            final isSelected =
+                                states.contains(MaterialState.selected);
+                            final colorRow = index % 2 == 0
+                                ? Colors.grey.withOpacity(0.1)
+                                : null;
+                            return isSelected
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.08)
+                                : colorRow;
+                          }),
                           cells: <DataCell>[
                             DataCell(SelectableText(item.key)),
                             DataCell(SelectableText(item.type)),
