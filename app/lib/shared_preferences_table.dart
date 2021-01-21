@@ -51,6 +51,14 @@ final _mapRunTimeTypeTextInputType = <String, TextInputType>{
   'List<String>': TextInputType.multiline,
 };
 
+final _mapRunTimeTypeDefaultValue = <String, String>{
+  'String': '',
+  'double': '1.0',
+  'int': '1',
+  'bool': 'false',
+  'List<String>': '',
+};
+
 enum Manipulation { add, edit, delete, deleteAll }
 
 class SharedPreferencesTable extends StatefulWidget {
@@ -94,9 +102,27 @@ class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
                 item: null,
               )),
     );
+    if (addItem == null) return;
     final SharedPreferences prefs = await _prefs;
 
     SharedPreferencesManipulationFactory.run(Manipulation.add, prefs, addItem)
+        .then((value) => setState(() {}));
+  }
+
+  _onEditItem(final BuildContext context, final Item item) async {
+    final editItem = await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => SharedPreferencesForm(
+                title: 'Edit',
+                item: item,
+              )),
+    );
+    if (editItem == null) return;
+
+    final SharedPreferences prefs = await _prefs;
+
+    SharedPreferencesManipulationFactory.run(Manipulation.edit, prefs, editItem)
         .then((value) => setState(() {}));
   }
 
@@ -131,7 +157,7 @@ class _SharedPreferencesTableState extends State<SharedPreferencesTable> {
                   ? Center(child: Text(_empty))
                   : DataTableWidget(
                       listItem: listItem,
-                      onSelectedItem: (item) => {log(item.key)},
+                      onSelectedItem: (item) => {_onEditItem(context, item)},
                     );
             }
             if (snapshot.hasError) {
@@ -207,11 +233,13 @@ class _SharedPreferencesFromState extends State<SharedPreferencesForm> {
   final _formKey = GlobalKey<FormState>();
   final _controllerKey = TextEditingController();
   final _controllerValue = TextEditingController();
+  bool newBoolValue = false;
   Item _itemUpdated;
 
   _onTypeSelected(final String newType) {
     setState(() {
-      _itemUpdated = _itemUpdated.copyWith(type: newType);
+      _itemUpdated = _itemUpdated.copyWith(
+          type: newType, value: _mapRunTimeTypeDefaultValue[newType]);
     });
   }
 
@@ -243,6 +271,7 @@ class _SharedPreferencesFromState extends State<SharedPreferencesForm> {
     _controllerKey.addListener(() => _onKeyChanged(_controllerKey.text));
     _controllerValue.text = _itemUpdated.value ?? "";
     _controllerValue.addListener(() => _onValueChanged(_controllerValue.text));
+    newBoolValue = _itemUpdated.key == 'bool' && _itemUpdated.value == 'true';
   }
 
   @override
@@ -300,7 +329,7 @@ class _SharedPreferencesFromState extends State<SharedPreferencesForm> {
                         height: 16.0,
                       ),
                       RuntimeTypeWidget(
-                          initType: 'String',
+                          initType: _itemUpdated.type,
                           allRunTimeType: _mapRunTimeTypeTextInputType.keys
                               .toList(growable: false),
                           onTypeSelected: _onTypeSelected),
@@ -311,31 +340,28 @@ class _SharedPreferencesFromState extends State<SharedPreferencesForm> {
                         'Value',
                         style: _bold,
                       ),
-                      TextField(
-                          controller: _controllerValue,
-                          maxLines: _getMaxLines(),
-                          keyboardType: _getKeyboardType()),
-                      Row(
-                        children: [
-                          Text('false'),
-                          Switch(
-                            value: false,
-                            onChanged: (bool newValue) {
-                              // setState(() {
-                              //   //_giveVerse = newValue;
-                              // });
-                            },
-                          )
-                        ],
-                      ),
-                      Switch(
-                        value: true,
-                        onChanged: (bool newValue) {
-                          // setState(() {
-                          //   //_giveVerse = newValue;
-                          // });
-                        },
-                      )
+                      _itemUpdated.type != 'bool'
+                          ? TextField(
+                              controller: _controllerValue,
+                              maxLines: _getMaxLines(),
+                              keyboardType: _getKeyboardType())
+                          : Row(
+                              children: [
+                                Container(
+                                  width: 48.0,
+                                  child: Text(newBoolValue.toString()),
+                                ),
+                                Switch(
+                                  value: newBoolValue,
+                                  onChanged: (bool newValue) {
+                                    setState(() {
+                                      newBoolValue = newValue;
+                                    });
+                                    _onValueChanged(newValue.toString());
+                                  },
+                                )
+                              ],
+                            ),
                     ]))));
   }
 }
@@ -365,7 +391,7 @@ class _RuntimeTypeWidgetState extends State<RuntimeTypeWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final list = widget.allRunTimeType;
+    final List<String> list = widget.allRunTimeType;
     return DropdownButton<String>(
       isExpanded: true,
       value: _dropdownValue,
@@ -482,7 +508,7 @@ class BoolOperator extends Operator {
 class ListStringOperator extends Operator {
   @override
   Future<bool> setValue(SharedPreferences prefs, String key, String value) {
-    final listStringValue = value.split('\n');
+    final listStringValue = value.split('\n').toList(growable: false);
     return prefs.setStringList(key, listStringValue);
   }
 }
